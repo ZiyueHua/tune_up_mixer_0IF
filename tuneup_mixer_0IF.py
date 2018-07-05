@@ -5,7 +5,10 @@ Created on Thu Jul 05 09:46:22 2018
 @author: hatlab
 """
 
-#for 0IF tuning, 
+#for 0IF tuning, we need to change waveform during the tuning process, and compare signal power on different waveform. That's why we need a setAWGpalse function.
+#Questions: need to turn off signel in offset tuning 
+#setup process of setAWGpalse is too much? or too less
+
 
 
 import numpy as np
@@ -223,6 +226,8 @@ def findclosest( channel_num, sweep_type = 'offset', wait_time = 0.05, sweepoint
 #==============================================================================
    
 def DC_offset_tune_up( I_channel_num, I_offset, Q_channel_num, Q_offset ):
+    AWGInst.channel_amp(I_channel_num, 0.0)
+    AWGInst.channel_amp(Q_channel_num, 0.0)
     #need to set start offset    
     for avgtimes, step in [ (1, 1), (2, 0.1), (5, 0.02), (20, 0.005) ]:  #, (100, 0.001)       
         MXA.set_max_count(avgtimes)
@@ -231,6 +236,8 @@ def DC_offset_tune_up( I_channel_num, I_offset, Q_channel_num, Q_offset ):
         I_offset = findmin( I_channel_num, avgtimes * 0.05, np.liespace( I_offset - step, I_offset + step, 10 ) )
         Q_offset = findmin( Q_channel_num, avgtimes * 0.05, np.liespace( Q_offset - step, Q_offset + step, 10 ) )
     
+    AWGInst.channel_amp(I_channel_num, 1.0)
+    AWGInst.channel_amp(Q_channel_num, 1.0)
     return I_offset, Q_offset
     
 #==============================================================================
@@ -294,10 +301,10 @@ IQscale = 1.0
 Skew = 0.0
 Iterations = 3
 
+setAWGpalse( set_ch3offset = Qoffset, set_ch4_offset = Ioffset, set_iqscale = IQscale, set_phase = np.pi/2, set_skewphase = Skew * 2 * np.pi )
+Ioffset, Qoffset = DC_offset_tune_up( I_channel_num, I_offset, Q_channel_num, Q_offset )
+
 for i in range(Iterations):
-    setAWGpalse( set_ch3offset = Qoffset, set_ch4_offset = Ioffset, set_iqscale = IQscale, set_phase = np.pi/2, set_skewphase = Skew * 2 * np.pi )
-    Ioffset, Qoffset = DC_offset_tune_up( I_channel_num, I_offset, Q_channel_num, Q_offset ):
-    
     setAWGpalse(  set_ch3offset = Qoffset, set_ch4_offset = Ioffset, set_iqscale = IQscale, set_phase = np.pi/2, set_skewphase = Skew * 2 * np.pi )
     MXA.set_max_count(100)
     qt.msleep(5)
